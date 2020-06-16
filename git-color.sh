@@ -31,14 +31,14 @@ __git_color()
   if [ "true" != "$(git rev-parse --is-inside-work-tree 2>/dev/null)" ]
   then
 	  printf "" # blank string
-	  exit 0
+	  return 0
   fi
-  c1='1;'
+  c1='0;'
   # check for stashes
-  git rev-parse --verify refs/stash >/dev/null 2>&1 && c1='4;'
+  git rev-parse --verify --quiet refs/stash >/dev/null && c1='4;'
 
   # check for unstaged changes
-  git diff --no-ext-diff --quiet --exit-code 2>/dev/null || c2=31
+  git diff --no-ext-diff --quiet || c2=31
   # check for staged changes
   if ! $(git rev-parse --quiet --verify HEAD >/dev/null && git diff-index --cached --quiet HEAD --)
   then
@@ -61,7 +61,8 @@ __git_color()
   fi
   
   # check for untracked files
-  if [ -n "$(git ls-files --others --exclude-standard)" ]; then
+  if git ls-files --others --exclude-standard --directory --no-empty-directory --error-unmatch -- ':/*' >/dev/null 2>/dev/null
+  then
 	  c2+=4
   fi
   
@@ -69,6 +70,6 @@ __git_color()
   [ 37 -eq $c2 ] && c2=36 # untracked + staged changes = cyan
   local color="\033[${c1}${c2}m"
   printf "%b" "$color" # %b is for escape sequence
-  exit 0
+  return 0
 }
 
